@@ -334,7 +334,7 @@ uv run pytest            # unit + CLI tests, no API calls (the judge is faked)
 uv run ruff check src tests bench
 ```
 
-Benchmark setup is in [bench/](bench/): `docker compose up -d` (pgvector), `uv run python bench/beir.py scifact nfcorpus fiqa`, then `uv run python bench/run_benchmark.py`.
+Benchmark setup is in [bench/](bench/): `cp .env.example .env` and set `POSTGRES_PASSWORD`, `docker compose up -d` (pgvector), `uv run python bench/beir.py scifact nfcorpus fiqa`, then `uv run python bench/run_benchmark.py`.
 
 ## License
 

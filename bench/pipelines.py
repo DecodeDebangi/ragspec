@@ -18,12 +18,14 @@ With `generate: true` the pipeline also answers with Claude, citing the retrieve
 from __future__ import annotations
 
 import json
+import os
 import threading
 from functools import cache
 from pathlib import Path
 
+from ragspec.config import load_env
+
 HERE = Path(__file__).parent
-DSN = "postgresql://ragspec:ragspec@localhost:5433/ragspec"
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 RERANKERS = {
@@ -33,6 +35,15 @@ RERANKERS = {
 CANDIDATES = 100
 RERANK_MAX_TOKENS = 256
 RRF_K = 60
+
+
+def dsn() -> str:
+    load_env()
+    password = os.environ.get("POSTGRES_PASSWORD")
+    if not password:
+        raise RuntimeError("set POSTGRES_PASSWORD in .env (see .env.example)")
+    return f"postgresql://ragspec:{password}@localhost:5433/ragspec"
+
 
 # Torch models are shared across the runner's worker threads; serialize calls into them.
 _model_lock = threading.Lock()
@@ -78,7 +89,7 @@ def connection():
         import psycopg
         from pgvector.psycopg import register_vector
 
-        conn = psycopg.connect(DSN, autocommit=True)
+        conn = psycopg.connect(dsn(), autocommit=True)
         register_vector(conn)
         conn.execute("SET hnsw.ef_search = 200")
         _local.conn = conn

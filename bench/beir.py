@@ -20,12 +20,12 @@ from collections import defaultdict
 from pathlib import Path
 
 import httpx
+from pipelines import dsn
 
 HERE = Path(__file__).parent
 DATA = HERE / "data"
 EVALS = HERE / "evals"
 BEIR_URL = "https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/{name}.zip"
-DSN = "postgresql://ragspec:ragspec@localhost:5433/ragspec"
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 EMBED_DIM = 384
 
@@ -100,7 +100,7 @@ def build_vectors(name: str, corpus: list[dict]) -> None:
     from sentence_transformers import SentenceTransformer
 
     table = f"docs_{name}"
-    with psycopg.connect(DSN, autocommit=True) as conn:
+    with psycopg.connect(dsn(), autocommit=True) as conn:
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
         register_vector(conn)
         exists = conn.execute("SELECT to_regclass(%s)", (table,)).fetchone()[0]
