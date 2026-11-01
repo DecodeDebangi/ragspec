@@ -1,0 +1,15 @@
+# Postgres + pgvector for the BEIR benchmark pipelines in bench/.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ragspec
+      POSTGRES_PASSWORD: ragspec
+      POSTGRES_DB: ragspec
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+volumes:
+  pg-data:

@@ -1,0 +1,10 @@
+# Retrieval-only benchmark run: hybrid on BEIR SciFact (300 test queries).
+dataset: ../evals/scifact.jsonl
+pipeline:
+  target: pipelines:make
+  python_path: [..]
+  options: {dataset: scifact, retriever: hybrid, k: 10}
+k: [1, 5, 10]
+concurrency: 1          # sequential, so latency numbers are per-query
+judge: {enabled: false}
+runs_dir: ../runs

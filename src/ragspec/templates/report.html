@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root {
+  color-scheme: light;
+  --surface-0: #f4f4f2;
+  --surface-1: #fcfcfb;
+  --border: #e3e2de;
+  --grid: #ebeae6;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7974;
+  --series-1: #2a78d6;
+  --series-1-wash: rgba(42, 120, 214, 0.10);
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warning: #fab219;
+  --critical: #d03b3b;
+  --critical-text: #b02a2a;
+  --mark: rgba(250, 178, 25, 0.28);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --border: #2e2e2c;
+    --grid: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --series-1: #3987e5;
+    --series-1-wash: rgba(57, 135, 229, 0.12);
+    --good-text: #4cc44c;
+    --critical-text: #f07a7a;
+    --mark: rgba(250, 178, 25, 0.22);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #121211;
+  --surface-1: #1a1a19;
+  --border: #2e2e2c;
+  --grid: #262624;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8f8e86;
+  --series-1: #3987e5;
+  --series-1-wash: rgba(57, 135, 229, 0.12);
+  --good-text: #4cc44c;
+  --critical-text: #f07a7a;
+  --mark: rgba(250, 178, 25, 0.22);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--surface-0); color: var(--text-primary);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+.sub { color: var(--text-secondary); margin: 0 0 20px; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 16px; }
+label.ctl { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+select, input[type=search] {
+  font: inherit; color: var(--text-primary); background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; min-width: 0;
+}
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.tile .label { color: var(--text-secondary); font-size: 12px; }
+.tile .value { font-size: 26px; font-weight: 600; margin-top: 2px; }
+.tile .delta { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.up, .tile .delta.up { color: var(--good-text); }
+.down, .tile .delta.down { color: var(--critical-text); }
+.chart-wrap { position: relative; }
+svg text { fill: var(--text-muted); font-size: 11px; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; display: none;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { color: var(--text-secondary); font-weight: 500; font-size: 12px; white-space: nowrap; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+tr.case { cursor: pointer; }
+tr.case:hover td { background: var(--series-1-wash); }
+tr.case td.q { max-width: 460px; }
+tr.detail td { background: var(--surface-0); padding: 14px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.claims { list-style: none; padding: 0; margin: 0 0 12px; }
+.claims li { padding: 6px 0; border-bottom: 1px solid var(--grid); }
+.claims .why { color: var(--text-muted); font-size: 12px; }
+.answer { white-space: pre-wrap; background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin: 0 0 12px; }
+.answer mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 2px; }
+.ctx { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; background: var(--surface-1); }
+.ctx .head { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+.ctx .body { font-size: 13px; max-height: 8.5em; overflow: auto; }
+.muted { color: var(--text-muted); }
+.err { color: var(--critical-text); }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.pill[aria-pressed=true] { border-color: var(--series-1); color: var(--text-primary); background: var(--series-1-wash); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>__TITLE__</h1>
+  <p class="sub" id="subtitle"></p>
+
+  <div class="controls">
+    <label class="ctl">Run
+      <select id="run-select"></select>
+    </label>
+    <label class="ctl">Compare with
+      <select id="base-select"></select>
+    </label>
+  </div>
+
+  <section class="tiles" id="tiles" aria-label="Headline metrics"></section>
+
+  <div class="grid2" style="margin-top:16px">
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+        <h2 id="chart-title" style="margin:0">Across runs</h2>
+        <select id="metric-select" aria-label="Metric to chart"></select>
+      </div>
+      <div class="chart-wrap" id="chart"></div>
+    </section>
+    <section class="card">
+      <h2>All metrics</h2>
+      <div class="table-scroll"><table id="metric-table"></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <h2 style="margin:0">Questions</h2>
+      <div class="pills" id="filters"></div>
+      <input type="search" id="search" placeholder="Search questions" aria-label="Search questions">
+    </div>
+    <div class="table-scroll"><table id="cases"></table></div>
+    <p class="muted" id="case-count" style="margin:8px 0 0"></p>
+  </section>
+</main>
+
+<script id="ragspec-data" type="application/json">__DATA__</script>
+<script>
+(() => {
+const RUNS = JSON.parse(document.getElementById("ragspec-data").textContent);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (v, d = 3) => v == null ? "–" : Number(v).toFixed(d);
+const signed = (v) => v == null ? "" : (v > 0 ? "+" : "") + v.toFixed(3);
+const INFO = new Set(["abstention_rate"]);
+
+let headIdx = RUNS.length - 1;
+let baseIdx = RUNS.length > 1 ? RUNS.length - 2 : -1;
+let filter = "all";
+let query = "";
+let openCase = new URLSearchParams(location.hash.slice(1)).get("case");
+
+function headlineMetrics(run) {
+  const names = Object.keys(run.summary);
+  const maxK = Math.max(...run.meta.k);
+  const picks = ["faithfulness", "citation_precision", "citation_recall", `recall@${maxK}`, `ndcg@${maxK}`, "mrr"];
+  return picks.filter((m) => names.includes(m));
+}
+
+function setupSelects() {
+  const opts = RUNS.map((r, i) => `<option value="${i}">${esc(r.meta.label)} · ${esc(r.meta.created_at.slice(0, 16).replace("T", " "))}</option>`).join("");
+  $("run-select").innerHTML = opts;
+  $("base-select").innerHTML = `<option value="-1">None</option>` + opts;
+  $("run-select").value = headIdx;
+  $("base-select").value = baseIdx;
+  $("run-select").onchange = (e) => { headIdx = +e.target.value; openCase = null; render(); };
+  $("base-select").onchange = (e) => { baseIdx = +e.target.value; render(); };
+  const allMetrics = [...new Set(RUNS.flatMap((r) => Object.keys(r.summary)))];
+  $("metric-select").innerHTML = allMetrics.map((m) => `<option>${esc(m)}</option>`).join("");
+  $("metric-select").value = headlineMetrics(RUNS[headIdx])[0] || allMetrics[0];
+  $("metric-select").onchange = renderChart;
+  $("search").oninput = (e) => { query = e.target.value.toLowerCase(); renderCases(); };
+  const filters = [["all", "All"], ["worse", "Worse than baseline"], ["unfaithful", "Unsupported claims"], ["missed", "Missed relevant docs"], ["errors", "Errors"]];
+  $("filters").innerHTML = filters.map(([k, l]) => `<button class="pill" data-f="${k}" aria-pressed="${k === filter}">${l}</button>`).join("");
+  $("filters").onclick = (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    filter = b.dataset.f;
+    $("filters").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.f === filter));
+    renderCases();
+  };
+}
+
+function render() {
+  const head = RUNS[headIdx];
+  const m = head.meta;
+  const cost = head.cost.judge_usd != null ? ` · judge cost $${head.cost.judge_usd.toFixed(2)}` : "";
+  $("subtitle").textContent = `${m.pipeline} · ${m.dataset} · ${m.n_cases} questions${m.judge_model ? " · judge " + m.judge_model : ""}${cost}`;
+  renderTiles(); renderChart(); renderMetricTable(); renderCases();
+}
+
+function renderTiles() {
+  const head = RUNS[headIdx], base = RUNS[baseIdx];
+  const tiles = headlineMetrics(head).map((name) => {
+    const v = head.summary[name]?.mean;
+    const b = base?.summary[name]?.mean;
+    const d = v != null && b != null ? v - b : null;
+    const cls = d == null || Math.abs(d) < 0.0005 ? "" : d > 0 ? "up" : "down";
+    const arrow = cls === "up" ? "▲ " : cls === "down" ? "▼ " : "";
+    return `<div class="tile"><div class="label">${esc(name.replace("_", " "))}</div>
+      <div class="value">${fmt(v)}</div>
+      <div class="delta ${cls}">${d == null ? `n = ${head.summary[name]?.n ?? 0}` : `${arrow}${signed(d)} vs ${esc(base.meta.label)}`}</div></div>`;
+  });
+  const lat = head.latency_ms;
+  if (lat.p50 != null) {
+    tiles.push(`<div class="tile"><div class="label">latency p50 / p95</div>
+      <div class="value">${Math.round(lat.p50)}<span class="muted" style="font-size:16px"> / ${Math.round(lat.p95)} ms</span></div>
+      <div class="delta">${head.errors ? `<span class="err">${head.errors} errors</span>` : "no errors"}</div></div>`);
+  }
+  $("tiles").innerHTML = tiles.join("");
+}
+
+function renderChart() {
+  const metric = $("metric-select").value;
+  $("chart-title").textContent = RUNS.length > 1 ? "Across runs" : "This run";
+  const pts = RUNS.map((r, i) => ({ i, label: r.meta.label, v: r.summary[metric]?.mean })).filter((p) => p.v != null);
+  const W = 520, H = 240, L = 40, R = 12, T = 14, B = 46;
+  const bw = Math.min(24, ((W - L - R) / Math.max(pts.length, 1)) * 0.6);
+  const max = Math.max(1, ...pts.map((p) => p.v));
+  const x = (k) => L + ((k + 0.5) * (W - L - R)) / pts.length;
+  const y = (v) => T + (1 - v / max) * (H - T - B);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(metric)} by run">`;
+  for (let t = 0; t <= 4; t++) {
+    const v = (max * t) / 4;
+    svg += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
+    svg += `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v.toFixed(2)}</text>`;
+  }
+  pts.forEach((p, k) => {
+    const h = y(0) - y(p.v), r = Math.min(4, h / 2);
+    const x0 = x(k) - bw / 2, y0 = y(p.v);
+    const sel = p.i === headIdx;
+    // Rounded data-end, square at the baseline.
+    const d = `M${x0},${y(0)} V${y0 + r} Q${x0},${y0} ${x0 + r},${y0} H${x0 + bw - r} Q${x0 + bw},${y0} ${x0 + bw},${y0 + r} V${y(0)} Z`;
+    svg += `<path d="${d}" fill="var(--series-1)" opacity="${sel ? 1 : 0.45}"/>`;
+    svg += `<rect class="hit" data-k="${k}" x="${x(k) - (W - L - R) / pts.length / 2}" y="${T}" width="${(W - L - R) / pts.length}" height="${H - T - B}" fill="transparent"/>`;
+    const lab = p.label.length > 14 ? p.label.slice(0, 13) + "…" : p.label;
+    svg += `<text x="${x(k)}" y="${H - B + 16}" text-anchor="middle">${esc(lab)}</text>`;
+    if (sel || pts.length <= 6) svg += `<text x="${x(k)}" y="${y0 - 6}" text-anchor="middle" style="fill:var(--text-secondary)">${p.v.toFixed(3)}</text>`;
+  });
+  svg += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--border)" stroke-width="1"/></svg>`;
+  $("chart").innerHTML = svg + `<div class="tooltip" id="tip"></div>`;
+  const tip = $("tip");
+  $("chart").querySelectorAll(".hit").forEach((el) => {
+    el.addEventListener("mousemove", (e) => {
+      const p = pts[+el.dataset.k], run = RUNS[p.i];
+      tip.innerHTML = `<b>${esc(run.meta.label)}</b><br>${esc(metric)}: ${p.v.toFixed(3)} (n=${run.summary[metric].n})<br><span class="muted">${esc(run.meta.pipeline)}</span>`;
+      const box = $("chart").getBoundingClientRect();
+      tip.style.display = "block";
+      tip.style.left = Math.min(e.clientX - box.left + 12, box.width - tip.offsetWidth) + "px";
+      tip.style.top = e.clientY - box.top - 10 + "px";
+    });
+    el.addEventListener("mouseleave", () => (tip.style.display = "none"));
+    el.addEventListener("click", () => { headIdx = pts[+el.dataset.k].i; $("run-select").value = headIdx; render(); });
+  });
+}
+
+function renderMetricTable() {
+  const head = RUNS[headIdx], base = RUNS[baseIdx];
+  let html = `<thead><tr><th>Metric</th><th class="num">${esc(head.meta.label)}</th>${base ? `<th class="num">${esc(base.meta.label)}</th><th class="num">Δ</th>` : ""}<th class="num">n</th></tr></thead><tbody>`;
+  for (const [name, s] of Object.entries(head.summary)) {
+    const b = base?.summary[name]?.mean;
+    const d = s.mean != null && b != null ? s.mean - b : null;
+    const cls = INFO.has(name) || d == null || Math.abs(d) < 0.0005 ? "" : d > 0 ? "up" : "down";
+    html += `<tr><td>${esc(name)}${INFO.has(name) ? ' <span class="muted">(info)</span>' : ""}</td><td class="num">${fmt(s.mean)}</td>${base ? `<td class="num">${fmt(b)}</td><td class="num ${cls}">${signed(d)}</td>` : ""}<td class="num muted">${s.n}</td></tr>`;
+  }
+  $("metric-table").innerHTML = html + "</tbody>";
+}
+
+function caseColumns(run) {
+  const maxK = Math.max(...run.meta.k);
+  return [`recall@${maxK}`, `ndcg@${maxK}`, "faithfulness", "citation_precision", "citation_recall"].filter((m) => m in run.summary);
+}
+
+function renderCases() {
+  const head = RUNS[headIdx], base = RUNS[baseIdx];
+  const baseById = new Map((base?.cases || []).map((c) => [c.case_id, c]));
+  const cols = caseColumns(head);
+  const maxK = Math.max(...head.meta.k);
+  const worse = (c) => {
+    const b = baseById.get(c.case_id);
+    return b && cols.some((m) => c.metrics[m] != null && b.metrics[m] != null && c.metrics[m] < b.metrics[m]);
+  };
+  const rows = head.cases.filter((c) => {
+    if (query && !c.question.toLowerCase().includes(query) && !c.case_id.toLowerCase().includes(query)) return false;
+    if (filter === "worse") return worse(c);
+    if (filter === "unfaithful") return c.metrics.faithfulness != null && c.metrics.faithfulness < 1;
+    if (filter === "missed") return c.metrics[`recall@${maxK}`] != null && c.metrics[`recall@${maxK}`] < 1;
+    if (filter === "errors") return !!c.error;
+    return true;
+  });
+  let html = `<thead><tr><th>Question</th>${cols.map((m) => `<th class="num">${esc(m.replace("citation_", "cite "))}</th>`).join("")}<th class="num">ms</th></tr></thead><tbody>`;
+  for (const c of rows.slice(0, 500)) {
+    const b = baseById.get(c.case_id);
+    html += `<tr class="case" data-id="${esc(c.case_id)}" aria-expanded="${openCase === c.case_id}"><td class="q"><span class="muted">${esc(c.case_id)}</span> ${esc(c.question)}${c.error ? ` <span class="err">⚠ ${esc(c.error)}</span>` : ""}</td>`;
+    for (const m of cols) {
+      const v = c.metrics[m], bv = b?.metrics[m];
+      const d = v != null && bv != null ? v - bv : null;
+      const mark = d == null || Math.abs(d) < 1e-9 ? "" : d > 0 ? ` <span class="up" title="was ${fmt(bv, 2)}">▲</span>` : ` <span class="down" title="was ${fmt(bv, 2)}">▼</span>`;
+      html += `<td class="num">${fmt(v, 2)}${mark}</td>`;
+    }
+    html += `<td class="num muted">${c.latency_ms == null ? "–" : Math.round(c.latency_ms)}</td></tr>`;
+    if (openCase === c.case_id) html += `<tr class="detail"><td colspan="${cols.length + 2}">${caseDetail(c)}</td></tr>`;
+  }
+  $("cases").innerHTML = html + "</tbody>";
+  $("case-count").textContent = `${rows.length} of ${head.cases.length} questions${rows.length > 500 ? " (showing first 500)" : ""} · click a row for claims and contexts`;
+  $("cases").querySelectorAll("tr.case").forEach((tr) => tr.addEventListener("click", () => {
+    openCase = openCase === tr.dataset.id ? null : tr.dataset.id;
+    history.replaceState(null, "", openCase ? `#case=${encodeURIComponent(openCase)}` : location.pathname);
+    renderCases();
+  }));
+}
+
+const VERDICT = {
+  supported: ["var(--good)", "✓", "Supported"],
+  unsupported: ["var(--warning)", "?", "Unsupported"],
+  contradicted: ["var(--critical)", "✕", "Contradicted"],
+};
+
+function caseDetail(c) {
+  let html = "";
+  if (c.answer != null) {
+    const answer = esc(c.answer).replace(/\[([^\[\]]+)\]/g, "<mark>[$1]</mark>");
+    html += `<h2>Answer</h2><div class="answer">${answer}</div>`;
+  }
+  const j = c.judge;
+  if (j) {
+    if (j.error) html += `<p class="err">Judge error: ${esc(j.error)}</p>`;
+    if (j.abstained) html += `<p class="muted">The answer abstained.</p>`;
+    if (j.invalid_citations?.length) html += `<p class="err">Cites ids that were not retrieved: ${j.invalid_citations.map(esc).join(", ")}</p>`;
+    if (j.claims?.length) {
+      html += `<h2>Claims</h2><ul class="claims">` + j.claims.map((cl) => {
+        const [color, icon, label] = VERDICT[cl.verdict];
+        const cited = cl.cited_ids.length ? `cites ${cl.cited_ids.map(esc).join(", ")}` : "no citation";
+        const sup = cl.supporting_ids.length ? ` · supported by ${cl.supporting_ids.map(esc).join(", ")}` : "";
+        return `<li><span class="badge"><span class="dot" style="background:${color}"></span>${icon} ${label}</span> ${esc(cl.text)}<div class="why">${cited}${sup}${cl.reason ? " · " + esc(cl.reason) : ""}</div></li>`;
+      }).join("") + `</ul>`;
+    }
+  }
+  const relevant = c.relevant || {};
+  const found = new Set(c.contexts.map((x) => x.id));
+  const missed = Object.keys(relevant).filter((id) => relevant[id] > 0 && !found.has(id));
+  html += `<h2>Retrieved contexts (${c.contexts.length})</h2>`;
+  if (missed.length) html += `<p class="muted">Relevant but not retrieved: ${missed.map(esc).join(", ")}</p>`;
+  html += c.contexts.map((x, i) => {
+    const rel = relevant[x.id] > 0;
+    return `<div class="ctx"><div class="head"><span>#${i + 1}</span><b>${esc(x.id)}</b>${rel ? `<span class="badge"><span class="dot" style="background:var(--good)"></span>✓ labelled relevant</span>` : ""}${x.score != null ? `<span>score ${fmt(x.score)}</span>` : ""}</div>${x.text ? `<div class="body">${esc(x.text)}</div>` : ""}</div>`;
+  }).join("");
+  return html;
+}
+
+setupSelects();
+render();
+})();
+</script>
+</body>
+</html>

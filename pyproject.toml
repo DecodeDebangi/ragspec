@@ -1,0 +1,51 @@
+[project]
+name = "ragspec"
+version = "0.1.0"
+description = "RAG Evaluator: score retrieval, faithfulness and citations, and catch regressions in CI"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+  "anthropic>=1.0",
+  "httpx>=0.28",
+  "pydantic>=2.9",
+  "python-dotenv>=1.2.4",
+  "pyyaml>=6.0",
+  "rich>=13.9",
+  "typer>=0.15",
+]
+
+[project.optional-dependencies]
+bench = [
+  "bm25s>=0.2",
+  "numpy>=2.1",
+  "pgvector>=0.3",
+  "psycopg[binary]>=3.2",
+  "pystemmer>=2.2",
+  "sentence-transformers>=3.3",
+  "tqdm>=4.67",
+]
+
+[project.scripts]
+ragspec = "ragspec.cli:app"
+
+[dependency-groups]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.25", "ruff>=0.8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ragspec"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

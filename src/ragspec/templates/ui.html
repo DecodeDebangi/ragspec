@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ragspec: RAG Evaluator</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8;
+  --glow-1: rgba(16, 163, 145, .13);
+  --glow-2: rgba(66, 112, 235, .10);
+  --surface: #ffffff;
+  --surface-2: #f0f3f6;
+  --border: #dfe4ea;
+  --line: #e9edf1;
+  --text: #0e1720;
+  --text-2: #47535f;
+  --text-3: #66727e;
+  --accent: #0a7f73;
+  --accent-2: #2f62d9;
+  --on-accent: #ffffff;
+  --accent-wash: rgba(10, 127, 115, .10);
+  --good: #05751d;
+  --good-solid: #1a9e3f;
+  --good-wash: rgba(26, 158, 63, .11);
+  --warn: #855800;
+  --warn-solid: #d99a12;
+  --warn-wash: rgba(217, 154, 18, .16);
+  --bad: #b3261e;
+  --bad-solid: #d9483f;
+  --bad-wash: rgba(217, 72, 63, .10);
+  --track: #e4e8ed;
+  --before: #9aa6b2;
+  --shadow: 0 1px 2px rgba(15, 30, 45, .05), 0 8px 24px rgba(15, 30, 45, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0a0f16;
+    --glow-1: rgba(45, 212, 191, .13);
+    --glow-2: rgba(96, 130, 255, .13);
+    --surface: #121a24;
+    --surface-2: #1a2430;
+    --border: #243040;
+    --line: #1f2a37;
+    --text: #f1f5f9;
+    --text-2: #b8c4d0;
+    --text-3: #8795a4;
+    --accent: #2dd4bf;
+    --accent-2: #7c9cff;
+    --on-accent: #04201c;
+    --accent-wash: rgba(45, 212, 191, .12);
+    --good: #5ee08a;
+    --good-solid: #3ecf73;
+    --good-wash: rgba(62, 207, 115, .13);
+    --warn: #f4c15d;
+    --warn-solid: #e8ab34;
+    --warn-wash: rgba(232, 171, 52, .14);
+    --bad: #ff8f87;
+    --bad-solid: #f2675d;
+    --bad-wash: rgba(242, 103, 93, .14);
+    --track: #243040;
+    --before: #66768a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .22);
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; color: var(--text); background: var(--bg);
+  background-image: radial-gradient(900px 480px at 12% -8%, var(--glow-1), transparent 70%), radial-gradient(800px 460px at 92% -4%, var(--glow-2), transparent 70%);
+  background-repeat: no-repeat;
+  font: 15px/1.55 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 1080px; margin: 0 auto; padding: 36px 16px 72px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button, select, input { font: inherit; color: inherit; }
+
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; margin: 0 0 28px; color: var(--text); }
+.brand-sub { font-weight: 500; color: var(--text-3); padding-left: 9px; border-left: 1px solid var(--border); }
+.logo { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); font-size: 15px; font-weight: 800; }
+.hero h1 { font: 700 42px/1.1 "Inter Tight", Inter, -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -.03em; margin: 0; max-width: 780px; }
+.hero h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lede { font-size: 17px; line-height: 1.6; color: var(--text-2); margin: 14px 0 0; max-width: 720px; }
+.steps { list-style: none; margin: 28px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: step; }
+.steps li { counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 16px 16px 56px; box-shadow: var(--shadow); }
+.steps li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: var(--accent); background: var(--accent-wash); }
+.steps b { display: block; font-size: 15px; letter-spacing: -.005em; }
+.steps span { display: block; font-size: 13.5px; line-height: 1.5; color: var(--text-2); margin-top: 3px; }
+.demo-note { display: inline-block; margin: 18px 0 0; font-size: 13.5px; color: var(--text-2); }
+
+.tabs { display: inline-flex; gap: 4px; margin: 28px 0 16px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+.tab { background: none; border: 0; border-radius: 9px; padding: 7px 14px; font-weight: 600; font-size: 14px; color: var(--text-2); cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); }
+.overall { padding: 0; overflow: hidden; }
+.overall-head { display: flex; gap: 14px; align-items: flex-start; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+.overall-head.bad { background: linear-gradient(100deg, var(--bad-wash), transparent 75%); }
+.overall-head.good { background: linear-gradient(100deg, var(--good-wash), transparent 75%); }
+.overall-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; font-weight: 700; color: #fff; }
+.overall-head.bad .overall-icon { background: var(--bad-solid); }
+.overall-head.good .overall-icon { background: var(--good-solid); }
+.overall h2 { font: 700 23px/1.25 "Inter Tight", Inter, sans-serif; letter-spacing: -.02em; margin: 0; }
+.overall .because { margin: 4px 0 0; color: var(--text-2); }
+.overall-body { padding: 18px 22px 20px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface-2); border-radius: 12px; padding: 14px; }
+.stat .name { font-size: 13px; color: var(--text-2); }
+.stat .nums { font: 700 28px/1.2 "Inter Tight", Inter, sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.02em; margin-top: 4px; }
+.stat .arrow { color: var(--text-3); font-weight: 400; margin: 0 6px; font-size: 22px; }
+.stat .before { color: var(--text-3); font-weight: 600; }
+.meter { display: grid; gap: 4px; margin: 10px 0; }
+.meter i { display: block; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.meter i::after { content: ""; display: block; height: 100%; width: var(--v); border-radius: 3px; background: var(--c); }
+.pill { display: inline-flex; gap: 4px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.pill.worse { background: var(--bad-wash); color: var(--bad); }
+.pill.better { background: var(--good-wash); color: var(--good); }
+.pill.same { background: var(--track); color: var(--text-2); }
+.fine { font-size: 13px; color: var(--text-3); margin: 14px 0 0; }
+.run-picker { font-size: 13px; color: var(--text-3); margin-top: 10px; }
+.run-picker summary { cursor: pointer; }
+.run-picker-body { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; }
+.run-picker label { display: flex; gap: 6px; align-items: center; min-width: 0; }
+select { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 13px; max-width: 100%; min-width: 0; }
+a { color: var(--accent); font-weight: 600; }
+
+h3.section { font: 700 17px/1.3 "Inter Tight", Inter, sans-serif; letter-spacing: -.01em; margin: 30px 0 10px; }
+.qlist { list-style: none; margin: 0; padding: 6px; max-height: 310px; overflow-y: auto; }
+.qbtn { display: flex; gap: 12px; align-items: center; width: 100%; background: none; border: 0; border-radius: 10px; padding: 9px 12px; text-align: left; cursor: pointer; }
+.qbtn:hover { background: var(--surface-2); }
+.qbtn[aria-current="true"] { background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.qbtn .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good-solid); }
+.qbtn .dot.bad { background: var(--bad-solid); }
+.qbtn .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.count { flex: none; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.count.bad { color: var(--bad); background: var(--bad-wash); }
+.count.good { color: var(--text-3); font-weight: 500; }
+
+.composer { padding: 14px; }
+.ask-row { display: flex; gap: 8px; }
+#question { flex: 1; min-width: 0; font-size: 17px; padding: 11px 14px; background: var(--surface-2); border: 1px solid transparent; border-radius: 11px; }
+#question:focus { border-color: var(--accent); outline: none; }
+#question::placeholder { color: var(--text-3); }
+#run { flex: none; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); font-weight: 650; border: 0; border-radius: 11px; padding: 11px 24px; cursor: pointer; }
+#run:hover { filter: brightness(1.07); }
+#run:disabled { opacity: .6; cursor: progress; }
+.options { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 10px; color: var(--text-2); font-size: 13px; }
+.options label { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.options select { max-width: 240px; }
+.live-note { font-size: 13px; color: var(--text-3); margin: 10px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-size: 14px; text-align: left; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+
+.verdict { margin: 26px 0 12px; }
+.verdict h2 { font: 700 21px/1.3 "Inter Tight", Inter, sans-serif; letter-spacing: -.015em; margin: 0; }
+.verdict p { margin: 4px 0 0; color: var(--text-2); font-size: 14px; }
+.notice { margin-top: 18px; background: var(--warn-wash); border: 1px solid var(--warn-solid); border-radius: 14px; padding: 14px 16px; }
+.notice b { display: block; }
+.notice button { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+.columns { display: grid; gap: 16px; align-items: start; }
+.columns.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.version { overflow: hidden; border-top: 3px solid var(--good-solid); }
+.version.has-problems { border-top-color: var(--bad-solid); }
+.version > header { padding: 14px 16px 12px; }
+.version .title { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-weight: 700; }
+.version > header small { display: block; color: var(--text-3); font-size: 13px; line-height: 1.4; margin-top: 3px; }
+.tally { flex: none; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; }
+.tally.good { color: var(--good); background: var(--good-wash); }
+.tally.bad { color: var(--bad); background: var(--bad-wash); }
+.checks { list-style: none; margin: 0; padding: 0 16px 14px; display: grid; gap: 6px; }
+.check { display: flex; gap: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.mark { flex: none; width: 20px; height: 20px; line-height: 20px; margin-top: 1px; text-align: center; border-radius: 50%; font-size: 12px; font-weight: 700; }
+.good .mark { background: var(--good-wash); color: var(--good); }
+.warn .mark { background: var(--warn-wash); color: var(--warn); }
+.bad .mark { background: var(--bad-wash); color: var(--bad); }
+.none .mark { background: var(--line); color: var(--text-3); }
+.check.none { color: var(--text-3); }
+.answer { margin: 0 16px 14px; padding: 13px 14px; background: var(--surface-2); border-radius: 11px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15.5px; }
+.cite { font-size: 12px; font-weight: 600; color: var(--accent); background: var(--accent-wash); border: 0; border-radius: 5px; padding: 1px 6px; cursor: pointer; }
+.facts-title { padding: 12px 16px 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--text-3); border-top: 1px solid var(--line); }
+.facts { list-style: none; margin: 0; padding: 4px 16px 14px; }
+.facts li { display: flex; gap: 8px; padding: 7px 0; font-size: 14px; overflow-wrap: anywhere; }
+.facts li > div { min-width: 0; }
+.why { display: block; color: var(--text-3); font-size: 13px; margin-top: 1px; }
+details.more { border-top: 1px solid var(--line); }
+details.more > summary { padding: 11px 16px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-2); }
+details.more > summary:hover { color: var(--text); }
+.more-body { padding: 0 16px 14px; }
+.doc { padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.doc:first-child { border-top: 0; }
+.doc summary { cursor: pointer; overflow-wrap: anywhere; }
+.doc-text { color: var(--text-2); margin-top: 6px; overflow-wrap: anywhere; }
+.right { color: var(--good); font-size: 12px; font-weight: 600; }
+.flash { background: var(--accent-wash); border-radius: 6px; }
+.score { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.score:first-child { border-top: 0; }
+.score b { font-variant-numeric: tabular-nums; }
+.score small { display: block; color: var(--text-3); font-size: 12px; }
+.tech { color: var(--text-3); font-size: 12px; overflow-wrap: anywhere; margin: 8px 0 0; }
+.problem { padding: 14px 16px; border-top: 1px solid var(--line); color: var(--bad); overflow-wrap: anywhere; }
+.skeleton { height: 200px; padding: 16px; color: var(--text-3); }
+
+@media (max-width: 760px) {
+  main { padding-top: 24px; }
+  .hero h1 { font-size: 31px; }
+  .hero .lede { font-size: 16px; }
+  .brand { margin-bottom: 20px; }
+  .steps, .stats, .columns.two { grid-template-columns: minmax(0, 1fr); }
+  .options label, .options select { width: 100%; max-width: none; }
+  .options select { flex: 1; }
+  .overall-head { padding: 16px; }
+  .overall-body { padding: 14px 16px 16px; }
+  .count { display: none; }
+}
+</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <p class="brand"><span class="logo" aria-hidden="true">✓</span>ragspec<span class="brand-sub">RAG Evaluator</span></p>
+    <h1>Automated tests for chatbots that answer from <em>your documents</em></h1>
+    <p class="lede">A RAG chatbot searches your documents, then writes an answer from what it finds. Small changes can quietly break it. ragspec catches that by running the same test questions before and after a change.</p>
+    <ol class="steps">
+      <li><b>Did it find the right documents?</b><span>Compares the search results with the documents known to hold the answer.</span></li>
+      <li><b>Does the answer stick to them?</b><span>An AI judge checks every fact against the documents and its citations.</span></li>
+      <li><b>Did the change make it worse?</b><span>Compares before and after, and fails the pull request if the drop is real.</span></li>
+    </ol>
+    <p class="demo-note" id="demo-note" hidden></p>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-saved" role="tab" type="button" aria-selected="true" aria-controls="panel-saved">Saved results</button>
+    <button class="tab" id="tab-live" role="tab" type="button" aria-selected="false" aria-controls="panel-live">Ask a question live</button>
+  </div>
+
+  <section id="panel-saved" role="tabpanel" aria-labelledby="tab-saved">
+    <div class="card overall" id="overall"></div>
+    <h3 class="section" id="questions-title"></h3>
+    <div class="card"><ul class="qlist" id="qlist"></ul></div>
+    <div class="verdict" id="saved-verdict"></div>
+    <div class="columns" id="saved-columns"></div>
+  </section>
+
+  <section id="panel-live" role="tabpanel" aria-labelledby="tab-live" hidden>
+    <form class="card composer" id="ask">
+      <div class="ask-row">
+        <input id="question" type="text" required autocomplete="off" aria-label="Your question" placeholder="Ask the chatbot a question…">
+        <button id="run" type="submit">Compare</button>
+      </div>
+      <div class="options">
+        <label>Compare <select id="configA" aria-label="First version"></select></label>
+        <label>with <select id="configB" aria-label="Second version"></select></label>
+        <label>Test questions <select id="preset" aria-label="Test questions"></select></label>
+      </div>
+      <p class="live-note">Each comparison calls your LLM API, up to 4 requests.</p>
+    </form>
+    <div class="chips" id="chips"></div>
+    <div class="notice" id="live-notice" hidden></div>
+    <div class="verdict" id="verdict" role="status" hidden></div>
+    <div class="columns" id="results"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MARK = { good: "✓", warn: "!", bad: "✕", none: "–" };
+const VERDICT = { supported: ["good", "✓", "Backed by the documents"], unsupported: ["warn", "!", "Not in the documents"], contradicted: ["bad", "✕", "Contradicts the documents"] };
+const JUDGE_NOTE = "Graded by an AI judge, which can be wrong. Open the facts and documents to check.";
+
+let setup;
+const configOf = (name) => setup.configs.find((c) => c.name === name);
+const labelOf = (name) => configOf(name)?.label || name;
+
+function fill(select, options, value) {
+  select.innerHTML = options.map(([v, l, off]) => `<option value="${esc(v)}"${off ? " disabled" : ""}>${esc(l)}</option>`).join("");
+  if (value != null) select.value = value;
+}
+
+function selectTab(name) {
+  for (const t of ["saved", "live"]) {
+    $(`tab-${t}`).setAttribute("aria-selected", String(t === name));
+    $(`panel-${t}`).hidden = t !== name;
+  }
+}
+
+async function load() {
+  setup = await (await fetch("/api/setup")).json();
+  if (setup.subject) {
+    $("demo-note").textContent = `Being tested here: ${setup.subject}.`;
+    $("demo-note").hidden = false;
+  }
+  setupLive();
+  await setupSaved();
+}
+
+/* ---------- checks shared by saved and live results ---------- */
+
+function friendlyError(message) {
+  const m = String(message || "");
+  if (/\b429\b|quota|per day|RESOURCE_EXHAUSTED/i.test(m)) return { title: "This API key has reached its usage limit", detail: "Free keys reset on a schedule, usually daily. Try again after that." };
+  if (/\b401\b|\b403\b|api key/i.test(m)) return { title: "The API key was rejected", detail: "Check the key in your .env file, then restart ragspec ui." };
+  if (/cannot reach ollama/i.test(m)) return { title: "Ollama isn't running", detail: "Start it, or pick another version." };
+  return { title: "Couldn't get a result", detail: m };
+}
+
+function checksFor(data, q) {
+  const r = data.result;
+  if (data.error || !r) return { failed: data.error, checks: [] };
+  if (r.error) return { failed: r.error, checks: [] };
+  const checks = [];
+  const j = r.judge;
+  const declined = !!j?.abstained;
+  const claims = j?.claims || [];
+  if (declined) {
+    if (q && !q.answerable) checks.push(["good", "Correctly said it doesn't know"]);
+    else if (q) checks.push(["bad", "Didn't answer a question the documents cover"]);
+    else checks.push(["none", "Said it doesn't know"]);
+  } else if (q && !q.answerable) {
+    checks.push(["bad", "Answered a question the documents don't cover"]);
+  }
+  if (claims.length) {
+    const backed = claims.filter((c) => c.verdict === "supported").length;
+    const contradicted = claims.some((c) => c.verdict === "contradicted");
+    if (backed === claims.length) checks.push(["good", claims.length === 1 ? "The answer is backed by the documents" : `All ${claims.length} facts are backed by the documents`]);
+    else checks.push([contradicted ? "bad" : "warn", `${claims.length - backed} of ${claims.length} facts ${claims.length - backed === 1 ? "isn't" : "aren't"} backed by the documents`]);
+    const cr = r.metrics.citation_recall;
+    if (backed) {
+      if (cr === 1) checks.push(["good", "Cites its sources correctly"]);
+      else if (cr === 0) checks.push(["warn", "Doesn't cite its sources"]);
+      else if (cr != null) checks.push(["warn", "Some facts lack a correct citation"]);
+    }
+  } else if (!j && r.answer) {
+    checks.push(["none", "Facts not checked (the judge is off for this version)"]);
+  }
+  const right = Object.entries(r.relevant).filter(([, g]) => g > 0).map(([id]) => id);
+  if (right.length) {
+    const missed = right.filter((id) => !r.contexts.some((d) => d.id === id));
+    if (!missed.length) checks.push(["good", right.length === 1 ? "Found the right document" : "Found all the right documents"]);
+    else checks.push(["bad", `Search missed ${missed.join(", ")}`]);
+  }
+  return { failed: null, checks };
+}
+
+const problemsIn = (status) => status.checks.filter(([level]) => level === "warn" || level === "bad").length;
+const plural = (n) => (n === 1 ? "1 problem" : `${n} problems`);
+
+function verdictTitle(labels, statuses) {
+  if (labels.length === 1) {
+    const n = problemsIn(statuses[0]);
+    return n ? `${labels[0]}: ${plural(n)} found` : `${labels[0]}: no problems found`;
+  }
+  const [a, b] = statuses.map(problemsIn);
+  if (a === 0 && b === 0) return "Both versions look good on this question";
+  if (a === b) return `Both versions have ${plural(a)} on this question`;
+  const [better, worse, nBetter, nWorse] = a < b ? [labels[0], labels[1], a, b] : [labels[1], labels[0], b, a];
+  return `${worse} has ${plural(nWorse)}; ${better} has ${nBetter || "none"}`;
+}
+
+const METRIC = {
+  faithfulness: ["Faithfulness", "Share of facts backed by the found documents"],
+  citation_precision: ["Citation precision", "Share of citations pointing to the right document"],
+  citation_recall: ["Citation recall", "Share of backed facts with a correct citation"],
+  mrr: ["MRR", "1 ÷ position of the first right document"],
+};
+function metricText(name) {
+  if (METRIC[name]) return METRIC[name];
+  const [kind, k] = name.split("@");
+  if (kind === "recall") return [`Recall@${k}`, `Share of the right documents in the top ${k}`];
+  if (kind === "ndcg") return [`nDCG@${k}`, `Right documents found and ranked high, top ${k}`];
+  return [name, ""];
+}
+
+function renderVersion({ label, description, tech }, data, status) {
+  const r = data.result;
+  const problems = problemsIn(status);
+  const tally = status.failed ? "" : `<span class="tally ${problems ? "bad" : "good"}">${problems ? `✕ ${plural(problems)}` : "✓ No problems"}</span>`;
+  const bad = status.failed || problems;
+  let html = `<header><div class="title"><span>${esc(label)}</span>${tally}</div>${description ? `<small>${esc(description)}</small>` : ""}</header>`;
+  if (status.failed) return `<article class="card version has-problems">${html}<div class="problem">${esc(friendlyError(status.failed).title)}</div></article>`;
+  if (status.checks.length) html += `<ul class="checks">` + status.checks.map(([level, text]) => `<li class="check ${level}"><span class="mark" aria-hidden="true">${MARK[level]}</span><span>${esc(text)}</span></li>`).join("") + `</ul>`;
+  const answer = r.answer ? esc(r.answer).replace(/\[([^\[\]]+)\]/g, (m, inner) => `<button type="button" class="cite" data-doc="${inner}">${inner}</button>`) : "No answer.";
+  html += `<div class="answer">${answer}</div>`;
+
+  const claims = r.judge?.claims || [];
+  if (claims.length) {
+    html += `<div class="facts-title">FACTS IN THE ANSWER</div><ul class="facts">` + claims.map((c) => {
+      const [level, mark, text] = VERDICT[c.verdict];
+      const why = c.verdict === "supported" ? "" : `<span class="why">${esc(text)}${c.reason ? `: ${esc(c.reason)}` : ""}</span>`;
+      return `<li class="${level}"><span class="mark" title="${esc(text)}">${mark}</span><div>${esc(c.text)}${why}</div></li>`;
+    }).join("") + `</ul>`;
+  }
+
+  html += `<details class="more docs"><summary>Documents it found (${r.contexts.length})</summary><div class="more-body">` + r.contexts.map((d, i) => {
+    const right = r.relevant[d.id] > 0 ? ` <span class="right">✓ right document</span>` : "";
+    return `<details class="doc" data-doc-id="${esc(d.id)}"><summary>${i + 1}. <b>${esc(d.id)}</b>${right}</summary>${d.text ? `<div class="doc-text">${esc(d.text)}</div>` : ""}</details>`;
+  }).join("") + `</div></details>`;
+
+  const scores = Object.entries(r.metrics).filter(([, v]) => v != null);
+  html += `<details class="more"><summary>Scores and settings</summary><div class="more-body">` +
+    scores.map(([k, v]) => {
+      const [title, help] = metricText(k);
+      return `<div class="score"><span>${esc(title)}<small>${esc(help)}</small></span><b>${v.toFixed(2)}</b></div>`;
+    }).join("") + (tech ? `<p class="tech">${esc(tech)}</p>` : "") + `</div></details>`;
+  return `<article class="card version${bad ? " has-problems" : ""}">${html}</article>`;
+}
+
+document.addEventListener("click", (e) => {
+  const cite = e.target.closest(".cite");
+  if (!cite) return;
+  const docs = cite.closest(".version").querySelector("details.docs");
+  docs.open = true;
+  const all = [...docs.querySelectorAll(".doc")];
+  for (const id of cite.dataset.doc.split(/\s*[,;]\s*/)) {
+    // "[2]" means the second document, unless a document is really called "2".
+    const doc = all.find((d) => d.dataset.docId === id) || (/^\d+$/.test(id) ? all[Number(id) - 1] : null);
+    if (doc) {
+      doc.open = true;
+      doc.scrollIntoView({ block: "center", behavior: "smooth" });
+      doc.classList.add("flash");
+      setTimeout(() => doc.classList.remove("flash"), 1500);
+    }
+  }
+});
+
+/* ---------- saved results: no API calls ---------- */
+
+let savedData;
+
+async function setupSaved() {
+  if (setup.runs.length < 2) {
+    $("tab-saved").hidden = true;
+    selectTab("live");
+    return;
+  }
+  // Prefer the two newest runs from the same model; they're the likeliest before/after pair.
+  const newest = setup.runs[0];
+  const pair = setup.runs.slice(1).find((r) => r.judge === newest.judge) || setup.runs[1];
+  await showSaved(pair.name, newest.name);
+}
+
+async function showSaved(baseName, headName) {
+  const res = await fetch(`/api/saved?${new URLSearchParams({ base: baseName, head: headName })}`);
+  if (!res.ok) throw new Error((await res.json()).error);
+  savedData = await res.json();
+  renderOverall();
+  renderQuestions();
+}
+
+function pct(v) { return v == null ? "–" : `${Math.round(v * 100)}%`; }
+
+function renderOverall() {
+  const { base, head, comparison } = savedData;
+  const m = Object.fromEntries(comparison.metrics.map((x) => [x.metric, x]));
+  const recall = comparison.metrics.filter((x) => x.metric.startsWith("recall@")).pop();
+  const rows = [["Facts backed by the documents", m.faithfulness], ["Facts with a correct citation", m.citation_recall], ["Right documents found", recall]].filter(([, x]) => x);
+  const blocked = comparison.failures.length > 0;
+  const worse = rows.filter(([, x]) => x.status === "regressed").map(([name]) => name.toLowerCase());
+  const because = blocked
+    ? (worse.length ? `The drop in ${worse.join(" and ")} is bigger than chance would explain.` : "It's below a required minimum.")
+    : "No score dropped by more than chance would explain.";
+  const status = { regressed: ["worse", "↓ Worse"], improved: ["better", "↑ Better"] };
+  const options = setup.runs.map((r) => [r.name, `${r.label} · ${r.judge || "search only"} · ${r.created_at.slice(0, 10)}`]);
+  $("overall").innerHTML = `
+    <div class="overall-head ${blocked ? "bad" : "good"}">
+      <span class="overall-icon" aria-hidden="true">${blocked ? "✕" : "✓"}</span>
+      <div>
+        <h2>${blocked ? `${esc(head.label)} would be blocked` : `${esc(head.label)} would pass`}</h2>
+        <p class="because">${esc(because)} Compared with ${esc(base.label)} across ${comparison.n_head} test questions.</p>
+      </div>
+    </div>
+    <div class="overall-body">
+    <div class="stats">${rows.map(([name, x]) => {
+      const [cls, word] = status[x.status] || ["same", "= No real change"];
+      const after = { worse: "var(--bad-solid)", better: "var(--good-solid)", same: "var(--accent)" }[cls];
+      return `<div class="stat"><div class="name">${esc(name)}</div><div class="nums"><span class="before">${pct(x.base)}</span><span class="arrow">→</span>${pct(x.head)}</div><div class="meter" aria-hidden="true"><i style="--v:${pct(x.base)};--c:var(--before)"></i><i style="--v:${pct(x.head)};--c:${after}"></i></div><span class="pill ${cls}">${word}</span></div>`;
+    }).join("")}</div>
+    <p class="fine">Saved results, so no API calls. ${esc(JUDGE_NOTE)}</p>
+    <details class="run-picker"><summary>Choose other saved runs</summary>
+      <div class="run-picker-body">
+        <label>Before <select id="runA">${options.map(([v, l]) => `<option value="${esc(v)}"${v === base.name ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+        <label>After <select id="runB">${options.map(([v, l]) => `<option value="${esc(v)}"${v === head.name ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+        <a target="_blank" rel="noopener" href="/report?${new URLSearchParams([["run", base.name], ["run", head.name]])}">Open the full dashboard ↗</a>
+      </div>
+    </details>
+    </div>`;
+  const change = () => showSaved($("runA").value, $("runB").value);
+  $("runA").addEventListener("change", change);
+  $("runB").addEventListener("change", change);
+}
+
+function pairFor(caseId) {
+  const { base, head } = savedData;
+  const find = (side) => side.run.cases.find((c) => c.case_id === caseId);
+  const b = find(base), h = find(head);
+  const q = { answerable: Object.values((b || h).relevant).some((g) => g > 0) };
+  return { b, h, sb: checksFor({ result: b }, q), sh: checksFor({ result: h }, q) };
+}
+
+function renderQuestions() {
+  const { head } = savedData;
+  const rows = head.run.cases
+    .filter((c) => savedData.base.run.cases.some((x) => x.case_id === c.case_id))
+    .map((c) => {
+      const { sb, sh } = pairFor(c.case_id);
+      return { c, diff: problemsIn(sh) - problemsIn(sb), head: problemsIn(sh) };
+    })
+    .sort((a, b) => b.diff - a.diff || b.head - a.head);
+  $("questions-title").textContent = `Pick a question to see both answers (${rows.length})`;
+  $("qlist").innerHTML = rows.map(({ c, head: n }) =>
+    `<li><button type="button" class="qbtn" data-id="${esc(c.case_id)}"><span class="dot ${n ? "bad" : ""}" aria-hidden="true"></span><span class="text">${esc(c.question)}</span><span class="count ${n ? "bad" : "good"}">${n ? `${plural(n)} in ${esc(savedData.head.label)}` : "no problems"}</span></button></li>`).join("");
+  if (rows.length) showQuestion(rows[0].c.case_id);
+}
+
+function showQuestion(caseId) {
+  const { base, head } = savedData;
+  const { b, h, sb, sh } = pairFor(caseId);
+  for (const btn of document.querySelectorAll(".qbtn")) btn.setAttribute("aria-current", String(btn.dataset.id === caseId));
+  const title = verdictTitle([base.label, head.label], [sb, sh]);
+  $("saved-verdict").innerHTML = `<h2>${esc(b.question)}</h2><p>${esc(title)}</p>`;
+  $("saved-columns").className = "columns two";
+  $("saved-columns").innerHTML =
+    renderVersion({ label: base.label, description: base.description, tech: base.run.meta.pipeline }, { result: b }, sb) +
+    renderVersion({ label: head.label, description: head.description, tech: head.run.meta.pipeline }, { result: h }, sh);
+}
+
+$("qlist").addEventListener("click", (e) => {
+  const btn = e.target.closest(".qbtn");
+  if (btn) showQuestion(btn.dataset.id);
+});
+
+/* ---------- live questions ---------- */
+
+function setupLive() {
+  const options = setup.configs.map((c) => [c.name, c.missing_key ? `${c.label} (needs ${c.missing_key})` : c.label, !!c.missing_key]);
+  const ready = setup.configs.filter((c) => !c.missing_key);
+  fill($("configA"), options, ready[0]?.name);
+  fill($("configB"), [["", "Nothing"], ...options], ready[1]?.name ?? "");
+  fill($("preset"), [["", "Choose…"], ...setup.questions.map((q) => [q.id, q.question])], "");
+  if (!setup.configs.length) return showLiveNotice("No ragspec configs in this folder", "Run ragspec ui in the folder with your ragspec.yaml.");
+  if (!ready.length) return showLiveNotice("Add an API key to ask live questions", `Set ${setup.configs[0].missing_key} in your .env file, then restart ragspec ui.`);
+  const picks = ["team-price", "webhook-retry", "sla-credit", "unanswerable-jira"].map((id) => setup.questions.find((q) => q.id === id)).filter(Boolean);
+  const list = picks.length ? picks : setup.questions.slice(0, 4);
+  $("chips").innerHTML = list.map((q) => `<button type="button" class="chip" data-id="${esc(q.id)}">${esc(q.question)}</button>`).join("");
+}
+
+function showLiveNotice(title, detail) {
+  const canBrowse = !$("tab-saved").hidden && savedData;
+  $("live-notice").innerHTML = `<b>${esc(title)}</b>${esc(detail)}${canBrowse ? ' <button type="button" id="to-saved">See saved results instead</button>' : ""}`;
+  $("live-notice").hidden = false;
+  $("to-saved")?.addEventListener("click", () => selectTab("saved"));
+}
+
+let timer;
+function setBusy(names) {
+  clearInterval(timer);
+  $("run").disabled = !!names;
+  if (!names) return;
+  $("chips").hidden = true;
+  $("live-notice").hidden = true;
+  $("results").className = names.length === 2 ? "columns two" : "columns";
+  $("results").innerHTML = names.map((n) => `<div class="card skeleton">${esc(labelOf(n))} is answering…</div>`).join("");
+  const start = Date.now();
+  const tick = () => {
+    const s = Math.round((Date.now() - start) / 1000);
+    $("verdict").hidden = false;
+    $("verdict").innerHTML = `<h2>Comparing… ${s}s</h2>${s > 20 ? "<p>Free API tiers limit requests per minute, so this can take a couple of minutes.</p>" : ""}`;
+  };
+  tick();
+  timer = setInterval(tick, 1000);
+}
+
+async function run() {
+  const question = $("question").value.trim();
+  if (!question) return;
+  const names = [$("configA").value];
+  if ($("configB").value && $("configB").value !== names[0]) names.push($("configB").value);
+  const q = setup.questions.find((x) => x.id === $("preset").value && x.question === question);
+  setBusy(names);
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, case_id: q?.id || null, configs: names }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    const statuses = names.map((n) => checksFor(data[n], q));
+    setBusy(null);
+    const failed = statuses.filter((s) => s.failed);
+    // One clear message when nothing worked, rather than the same error in every column.
+    if (failed.length === names.length) {
+      $("verdict").hidden = true;
+      $("results").innerHTML = "";
+      const f = friendlyError(failed[0].failed);
+      showLiveNotice(f.title, f.detail);
+      return;
+    }
+    const title = failed.length ? `${labelOf(names[statuses.findIndex((s) => s.failed)])} couldn't run` : verdictTitle(names.map(labelOf), statuses);
+    $("verdict").hidden = false;
+    $("verdict").innerHTML = `<h2>${esc(title)}</h2><p>${esc(JUDGE_NOTE)}</p>`;
+    $("results").innerHTML = names.map((n, i) => {
+      const c = configOf(n);
+      return renderVersion({ label: labelOf(n), description: c?.description, tech: `${c?.pipeline || ""}${c?.judge ? ` · judge ${c.judge}` : ""}` }, data[n], statuses[i]);
+    }).join("");
+  } catch (err) {
+    setBusy(null);
+    $("verdict").hidden = true;
+    $("results").innerHTML = "";
+    const f = friendlyError(err.message);
+    showLiveNotice(f.title, f.detail);
+  }
+}
+
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); run(); });
+$("preset").addEventListener("change", () => {
+  const q = setup.questions.find((x) => x.id === $("preset").value);
+  if (q) { $("question").value = q.question; $("question").focus(); }
+});
+$("question").addEventListener("input", () => { $("preset").value = ""; });
+$("chips").addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  const q = setup.questions.find((x) => x.id === chip.dataset.id);
+  $("preset").value = q.id;
+  $("question").value = q.question;
+  run();
+});
+$("tab-saved").addEventListener("click", () => selectTab("saved"));
+$("tab-live").addEventListener("click", () => selectTab("live"));
+
+load().catch((err) => { $("demo-note").hidden = false; $("demo-note").textContent = `Couldn't load: ${err.message}`; });
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Copy to .github/workflows/ragspec.yml in the repo that holds your RAG app.
+# Pushes to main record a baseline; pull requests are compared against it and get a comment.
+name: ragspec
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  actions: read          # download the baseline artifact
+  pull-requests: write   # post the comment
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install your app
+        run: pip install -r requirements.txt
+      - uses: DecodeDebangi/ragspec@v0
+        with:
+          config: ragspec.yaml
+          args: --sample 100      # optional: a fixed, seeded subset keeps PR runs cheap
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Using provider: openai (e.g. Gemini's free tier) in ragspec.yaml? Pass this instead:
+          # LLM_API_KEY: ${{ secrets.LLM_API_KEY }}

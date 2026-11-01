@@ -1,0 +1,148 @@
+name: ragspec
+description: Evaluate a RAG pipeline, compare it with the default branch, and comment on the PR.
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  config:
+    description: Path to ragspec.yaml, relative to working-directory.
+    default: ragspec.yaml
+  working-directory:
+    description: Directory to run in.
+    default: .
+  args:
+    description: Extra arguments for `ragspec run`, e.g. "--sample 100".
+    default: ""
+  baseline-branch:
+    description: Branch whose latest run is the baseline. Defaults to the repository default branch.
+    default: ""
+  artifact-name:
+    description: Name of the artifact that stores the baseline run.
+    default: ragspec-baseline
+  comment:
+    description: Post or update a comment on the pull request.
+    default: "true"
+  fail-on-regression:
+    description: Fail the job when the gate fails.
+    default: "true"
+  python-version:
+    description: Python version to install.
+    default: "3.12"
+  github-token:
+    description: Token for downloading the baseline artifact and commenting.
+    default: ${{ github.token }}
+
+outputs:
+  passed:
+    description: "\"true\" if the gate passed."
+    value: ${{ steps.run.outputs.passed }}
+  run-file:
+    description: Path to this run's JSON file.
+    value: ${{ steps.run.outputs.run_file }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install ragspec
+      shell: bash
+      run: python -m pip install --quiet "${{ github.action_path }}"
+
+    - name: Restore judge cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.working-directory }}/.ragspec/cache
+        key: ragspec-judge-${{ github.sha }}
+        restore-keys: ragspec-judge-
+
+    - name: Download baseline
+      id: baseline
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        BASE: ${{ inputs.baseline-branch || github.event.repository.default_branch }}
+        NAME: ${{ inputs.artifact-name }}
+      run: |
+        url=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?name=${NAME}&per_page=50" \
+          --jq "[.artifacts[] | select(.expired == false and .workflow_run.head_branch == \"${BASE}\")][0].archive_download_url // empty")
+        if [ -z "$url" ]; then
+          echo "::notice::No ragspec baseline found on ${BASE}. This run will not be compared."
+          exit 0
+        fi
+        mkdir -p .ragspec/baseline
+        gh api "$url" > .ragspec/baseline.zip
+        unzip -o -q .ragspec/baseline.zip -d .ragspec/baseline
+        echo "file=.ragspec/baseline/baseline.json" >> "$GITHUB_OUTPUT"
+
+    - name: Run ragspec
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        BASELINE: ${{ steps.baseline.outputs.file }}
+        CONFIG: ${{ inputs.config }}
+        EXTRA_ARGS: ${{ inputs.args }}
+        LABEL: ${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.number) || github.ref_name }}
+      run: |
+        compare=()
+        if [ -n "$BASELINE" ] && [ -f "$BASELINE" ]; then
+          compare=(--baseline "$BASELINE" --markdown .ragspec/comment.md)
+        fi
+        set +e
+        # shellcheck disable=SC2086
+        ragspec run -c "$CONFIG" --label "$LABEL" --out .ragspec/head.json \
+          --report .ragspec/report.html "${compare[@]}" $EXTRA_ARGS
+        code=$?
+        set -e
+        if [ "$code" -gt 1 ]; then exit "$code"; fi
+        echo "passed=$([ "$code" -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        echo "run_file=$(pwd)/.ragspec/head.json" >> "$GITHUB_OUTPUT"
+        cp .ragspec/head.json .ragspec/baseline.json
+        if [ -f .ragspec/comment.md ]; then cat .ragspec/comment.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+    - name: Upload report
+      uses: actions/upload-artifact@v4
+      with:
+        name: ragspec-report
+        path: ${{ inputs.working-directory }}/.ragspec/report.html
+
+    - name: Save baseline
+      if: github.event_name == 'push' && github.ref_name == (inputs.baseline-branch || github.event.repository.default_branch)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.working-directory }}/.ragspec/baseline.json
+        retention-days: 90
+        overwrite: true
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request' && inputs.comment == 'true' && hashFiles(format('{0}/.ragspec/comment.md', inputs.working-directory)) != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR: ${{ github.event.number }}
+      run: |
+        run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        printf '\n<sub>[HTML report](%s) (artifact: ragspec-report)</sub>\n' "$run_url" >> .ragspec/comment.md
+        existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
+          --jq '[.[] | select(.body | contains("<!-- ragspec-report -->"))][0].id // empty')
+        body=$(jq -Rs '{body: .}' < .ragspec/comment.md)
+        if [ -n "$existing" ]; then
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" --input - <<< "$body" > /dev/null
+        else
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --input - <<< "$body" > /dev/null
+        fi
+
+    - name: Enforce gate
+      if: inputs.fail-on-regression == 'true' && steps.run.outputs.passed == 'false'
+      shell: bash
+      run: |
+        echo "::error::ragspec gate failed. See the PR comment or job summary."
+        exit 1

@@ -1,0 +1,24 @@
+# Baseline on a free hosted LLM: answers and grading both use Gemini. Needs LLM_API_KEY.
+# For Groq, use base_url https://api.groq.com/openai/v1 and model llama-3.3-70b-versatile, in both places.
+label: "Good version (Gemini)"
+description: "Reads the 4 best-matching help articles. Must answer only from them and cite them."
+subject: "a help-center chatbot for Nimbus, a made-up project management app"
+dataset: questions.jsonl
+pipeline:
+  target: rag:make
+  options:
+    top_k: 4
+    prompt: grounded
+    provider: openai
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    model: gemini-3.5-flash-lite
+k: [1, 4]
+concurrency: 1       # free tiers allow only a few requests per minute
+judge:
+  provider: openai
+  base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+  model: gemini-3.5-flash-lite
+  concurrency: 1
+gate:
+  min:
+    faithfulness: 0.8

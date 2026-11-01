@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.ragspec/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+ragspec-report.html
+.DS_Store
+.env
+
+# Personal study notes, kept local.
+docs/RAG_EVALUATOR_DEEP_DIVE.md
+docs/deep-dive/
+docs/learn/

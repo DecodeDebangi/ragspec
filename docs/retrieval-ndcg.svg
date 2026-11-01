@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif">
+<style>
+  .bg { fill: #fcfcfb; } .grid { stroke: #ebeae6; } .axis { stroke: #d6d5d0; }
+  .t1 { fill: #0b0b0b; } .t2 { fill: #52514e; } .t3 { fill: #7a7974; }
+  .s0 { fill: #2a78d6; }
+  .s1 { fill: #eb6834; }
+  .s2 { fill: #1baf7a; }
+  .s3 { fill: #eda100; }
+  .s4 { fill: #e87ba4; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #1a1a19; } .grid { stroke: #2a2a28; } .axis { stroke: #3a3a37; }
+    .t1 { fill: #f0efec; } .t2 { fill: #c3c2b7; } .t3 { fill: #8f8e86; }
+    .s0 { fill: #3987e5; }
+    .s1 { fill: #d95926; }
+    .s2 { fill: #199e70; }
+    .s3 { fill: #c98500; }
+    .s4 { fill: #d55181; }
+  }
+</style>
+<rect class="bg" width="760" height="340" rx="10"/>
+<text class="t1" x="44" y="24" font-size="15" font-weight="600">nDCG@10 on BEIR (higher is better)</text>
+<rect class="s0" x="44" y="38" width="10" height="10" rx="2"/>
+<text class="t2" x="59" y="47" font-size="12">BM25</text>
+<rect class="s1" x="103.4" y="38" width="10" height="10" rx="2"/>
+<text class="t2" x="118.4" y="47" font-size="12">Dense</text>
+<rect class="s2" x="169.4" y="38" width="10" height="10" rx="2"/>
+<text class="t2" x="184.4" y="47" font-size="12">Hybrid (RRF)</text>
+<rect class="s3" x="281.6" y="38" width="10" height="10" rx="2"/>
+<text class="t2" x="296.6" y="47" font-size="12">Hybrid + MiniLM rerank</text>
+<rect class="s4" x="459.8" y="38" width="10" height="10" rx="2"/>
+<text class="t2" x="474.8" y="47" font-size="12">Hybrid + bge rerank</text>
+<line class="grid" x1="44" x2="744" y1="300.0" y2="300.0"/>
+<text class="t3" x="36" y="304.0" font-size="11" text-anchor="end">0.0</text>
+<line class="grid" x1="44" x2="744" y1="241.0" y2="241.0"/>
+<text class="t3" x="36" y="245.0" font-size="11" text-anchor="end">0.2</text>
+<line class="grid" x1="44" x2="744" y1="182.0" y2="182.0"/>
+<text class="t3" x="36" y="186.0" font-size="11" text-anchor="end">0.4</text>
+<line class="grid" x1="44" x2="744" y1="123.0" y2="123.0"/>
+<text class="t3" x="36" y="127.0" font-size="11" text-anchor="end">0.6</text>
+<line class="grid" x1="44" x2="744" y1="64.0" y2="64.0"/>
+<text class="t3" x="36" y="68.0" font-size="11" text-anchor="end">0.8</text>
+<path class="s0" d="M97.7,300.0 V101.5 Q97.7,97.5 101.7,97.5 H115.7 Q119.7,97.5 119.7,101.5 V300.0 Z"><title>BM25 on SciFact: 0.686</title></path>
+<path class="s1" d="M123.7,300.0 V93.8 Q123.7,89.8 127.7,89.8 H141.7 Q145.7,89.8 145.7,93.8 V300.0 Z"><title>Dense on SciFact: 0.713</title></path>
+<path class="s2" d="M149.7,300.0 V90.6 Q149.7,86.6 153.7,86.6 H167.7 Q171.7,86.6 171.7,90.6 V300.0 Z"><title>Hybrid (RRF) on SciFact: 0.723</title></path>
+<text class="t1" x="160.7" y="80.6" font-size="11" font-weight="600" text-anchor="middle">0.723</text>
+<path class="s3" d="M175.7,300.0 V102.0 Q175.7,98.0 179.7,98.0 H193.7 Q197.7,98.0 197.7,102.0 V300.0 Z"><title>Hybrid + MiniLM rerank on SciFact: 0.685</title></path>
+<path class="s4" d="M201.7,300.0 V107.5 Q201.7,103.5 205.7,103.5 H219.7 Q223.7,103.5 223.7,107.5 V300.0 Z"><title>Hybrid + bge rerank on SciFact: 0.666</title></path>
+<text class="t2" x="160.7" y="320" font-size="12" text-anchor="middle">SciFact</text>
+<path class="s0" d="M331.0,300.0 V209.1 Q331.0,205.1 335.0,205.1 H349.0 Q353.0,205.1 353.0,209.1 V300.0 Z"><title>BM25 on NFCorpus: 0.322</title></path>
+<path class="s1" d="M357.0,300.0 V202.6 Q357.0,198.6 361.0,198.6 H375.0 Q379.0,198.6 379.0,202.6 V300.0 Z"><title>Dense on NFCorpus: 0.344</title></path>
+<path class="s2" d="M383.0,300.0 V199.5 Q383.0,195.5 387.0,195.5 H401.0 Q405.0,195.5 405.0,199.5 V300.0 Z"><title>Hybrid (RRF) on NFCorpus: 0.354</title></path>
+<path class="s3" d="M409.0,300.0 V198.7 Q409.0,194.7 413.0,194.7 H427.0 Q431.0,194.7 431.0,198.7 V300.0 Z"><title>Hybrid + MiniLM rerank on NFCorpus: 0.357</title></path>
+<text class="t1" x="420.0" y="188.7" font-size="11" font-weight="600" text-anchor="middle">0.357</text>
+<path class="s4" d="M435.0,300.0 V208.8 Q435.0,204.8 439.0,204.8 H453.0 Q457.0,204.8 457.0,208.8 V300.0 Z"><title>Hybrid + bge rerank on NFCorpus: 0.323</title></path>
+<text class="t2" x="394.0" y="320" font-size="12" text-anchor="middle">NFCorpus</text>
+<path class="s0" d="M564.3,300.0 V229.8 Q564.3,225.8 568.3,225.8 H582.3 Q586.3,225.8 586.3,229.8 V300.0 Z"><title>BM25 on FiQA-2018: 0.251</title></path>
+<path class="s1" d="M590.3,300.0 V186.2 Q590.3,182.2 594.3,182.2 H608.3 Q612.3,182.2 612.3,186.2 V300.0 Z"><title>Dense on FiQA-2018: 0.399</title></path>
+<text class="t1" x="601.3" y="176.2" font-size="11" font-weight="600" text-anchor="middle">0.399</text>
+<path class="s2" d="M616.3,300.0 V198.3 Q616.3,194.3 620.3,194.3 H634.3 Q638.3,194.3 638.3,198.3 V300.0 Z"><title>Hybrid (RRF) on FiQA-2018: 0.358</title></path>
+<path class="s3" d="M642.3,300.0 V195.0 Q642.3,191.0 646.3,191.0 H660.3 Q664.3,191.0 664.3,195.0 V300.0 Z"><title>Hybrid + MiniLM rerank on FiQA-2018: 0.369</title></path>
+<path class="s4" d="M668.3,300.0 V201.4 Q668.3,197.4 672.3,197.4 H686.3 Q690.3,197.4 690.3,201.4 V300.0 Z"><title>Hybrid + bge rerank on FiQA-2018: 0.348</title></path>
+<text class="t2" x="627.3" y="320" font-size="12" text-anchor="middle">FiQA-2018</text>
+<line class="axis" x1="44" x2="744" y1="300.0" y2="300.0"/>
+</svg>

@@ -1,0 +1,18 @@
+# Baseline, fully local: answers and grading both run on Ollama (no API key).
+# Change the model in both places to try another one, e.g. qwen2.5:3b (faster, much less accurate).
+label: "Good version (local)"
+description: "Reads the 4 best-matching help articles. Must answer only from them and cite them."
+subject: "a help-center chatbot for Nimbus, a made-up project management app"
+dataset: questions.jsonl
+pipeline:
+  target: rag:make
+  options: {top_k: 4, prompt: grounded, provider: ollama, model: "qwen2.5:7b"}
+k: [1, 4]
+concurrency: 1       # one request at a time: a laptop runs one model call at once anyway
+judge:
+  provider: ollama
+  model: qwen2.5:7b
+  concurrency: 1
+gate:
+  min:
+    faithfulness: 0.8

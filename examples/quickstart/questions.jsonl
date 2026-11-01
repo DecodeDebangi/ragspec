@@ -1,0 +1,26 @@
+{"id": "refund-annual", "question": "Can I get my money back on an annual plan?", "relevant": ["billing-refunds"], "tags": ["billing"]}
+{"id": "refund-monthly", "question": "I'm on a monthly plan. If I cancel, do I get a refund?", "relevant": ["billing-refunds"], "tags": ["billing"]}
+{"id": "refund-timing", "question": "How long does a refund take to show up?", "relevant": ["billing-refunds"], "tags": ["billing"]}
+{"id": "seat-removal", "question": "Do I get refunded when I remove a seat?", "relevant": ["billing-seats", "billing-refunds"], "tags": ["billing"]}
+{"id": "vat", "question": "How do I add my VAT number to an invoice I already received?", "relevant": ["billing-invoices"], "tags": ["billing"]}
+{"id": "team-price", "question": "How much is the Team plan?", "relevant": ["billing-plans"], "tags": ["billing"]}
+{"id": "sso-plan", "question": "Which plan do I need for SAML single sign-on?", "relevant": ["auth-sso", "billing-plans"], "tags": ["auth"]}
+{"id": "sso-owner-password", "question": "After we enforce SSO, can anyone still log in with a password?", "relevant": ["auth-sso"], "tags": ["auth"]}
+{"id": "sms-2fa", "question": "Can I receive two-factor codes by text message?", "relevant": ["auth-2fa"], "tags": ["auth"]}
+{"id": "session-length", "question": "How long before I'm logged out for inactivity?", "relevant": ["auth-sessions"], "tags": ["auth"]}
+{"id": "rate-limit", "question": "What happens if my integration sends more than 1,000 API requests a minute on the Team plan?", "relevant": ["api-rate-limits"], "tags": ["api"]}
+{"id": "webhook-retry", "question": "How long do you keep retrying a webhook that fails?", "relevant": ["api-webhooks"], "tags": ["api"]}
+{"id": "webhook-verify", "question": "How do I verify that a webhook really came from Nimbus?", "relevant": ["api-webhooks"], "tags": ["api"]}
+{"id": "page-size", "question": "What's the maximum page size for list endpoints?", "relevant": ["api-pagination"], "tags": ["api"]}
+{"id": "restore-project", "question": "I deleted a project by mistake last week. Can I get it back?", "relevant": ["data-retention"], "tags": ["data"]}
+{"id": "audit-retention", "question": "How long are audit logs kept on Enterprise?", "relevant": ["data-retention"], "tags": ["data"]}
+{"id": "export-link", "question": "How long is the workspace export download link valid?", "relevant": ["data-export"], "tags": ["data"]}
+{"id": "india-hosting", "question": "Can our data be stored in India?", "relevant": ["data-residency"], "tags": ["data"]}
+{"id": "backup-frequency", "question": "How often is data backed up and for how long are backups kept?", "relevant": ["data-backups"], "tags": ["data"]}
+{"id": "upload-limit", "question": "What's the biggest file I can upload?", "relevant": ["projects-limits"], "tags": ["projects"]}
+{"id": "guest-seat", "question": "Do guests count as paid seats?", "relevant": ["projects-guests"], "tags": ["projects"]}
+{"id": "github-autoclose", "question": "Can tasks close automatically when a PR is merged?", "relevant": ["integrations-github"], "tags": ["integrations"]}
+{"id": "sla-credit", "question": "What compensation do we get if uptime drops to 99.75% in a month?", "relevant": ["status-uptime"], "tags": ["support"]}
+{"id": "support-enterprise", "question": "How fast does support respond to urgent Enterprise issues?", "relevant": ["support-hours"], "tags": ["support"]}
+{"id": "unanswerable-jira", "question": "Is there a Jira integration?", "relevant": [], "tags": ["unanswerable"]}
+{"id": "unanswerable-hipaa", "question": "Is Nimbus HIPAA compliant?", "relevant": [], "tags": ["unanswerable"]}

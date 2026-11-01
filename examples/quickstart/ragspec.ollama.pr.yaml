@@ -1,0 +1,18 @@
+# The same hypothetical PR as ragspec.pr.yaml, fully local on Ollama.
+# Change the model in both places to try another one, e.g. qwen2.5:3b (faster, much less accurate).
+label: "Bad PR (local)"
+description: "A simulated pull request: reads only 2 articles, is told to be helpful and confident, and has no citation rule."
+subject: "a help-center chatbot for Nimbus, a made-up project management app"
+dataset: questions.jsonl
+pipeline:
+  target: rag:make
+  options: {top_k: 2, prompt: concise, provider: ollama, model: "qwen2.5:7b"}
+k: [1, 4]
+concurrency: 1       # one request at a time: a laptop runs one model call at once anyway
+judge:
+  provider: ollama
+  model: qwen2.5:7b
+  concurrency: 1
+gate:
+  min:
+    faithfulness: 0.8

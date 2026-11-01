@@ -1,0 +1,17 @@
+# A hypothetical PR: "shorter prompt and fewer chunks to cut latency and cost".
+label: "Bad PR (Claude)"
+description: "A simulated pull request: reads only 2 articles, is told to be helpful and confident, and has no citation rule."
+subject: "a help-center chatbot for Nimbus, a made-up project management app"
+dataset: questions.jsonl
+pipeline:
+  target: rag:make
+  options: {top_k: 2, prompt: concise}
+k: [1, 4]
+concurrency: 8
+judge:
+  model: claude-opus-5-5
+  effort: medium
+  concurrency: 8
+gate:
+  min:
+    faithfulness: 0.8
