@@ -1,7 +1,7 @@
 [project]
 name = "ragspec"
 version = "0.1.0"
-description = "RAG Evaluator: score retrieval, faithfulness and citations, and catch regressions in CI"
+description = "RAG Evaluator: score retrieval, faithfulness and citations, and catch regressions between runs"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

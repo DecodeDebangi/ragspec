@@ -1,9 +1,9 @@
 # ragspec: RAG Evaluator
 
-**pytest for RAG.** Point it at any retrieval-augmented generation pipeline and a set of questions. It scores retrieval, checks every claim in every answer against the retrieved sources, and tells you, with confidence intervals, whether a change made things worse. It runs in CI and comments on the pull request.
+**pytest for RAG.** Point it at any retrieval-augmented generation pipeline and a set of questions. It scores retrieval, checks every claim in every answer against the retrieved sources, and tells you, with confidence intervals, whether a change made things worse. It also includes a GitHub Action for pull requests, which hasn't been run on GitHub yet.
 
-> **Current status.** The CLI, metrics, comparison, dashboard and retrieval benchmark are tested and measured. Three things are still in progress:
-> - The GitHub Action hasn't run on a real pull request yet, and the `v0` tag it references doesn't exist yet.
+> **Current status.** The CLI, metrics, comparison, dashboard and retrieval benchmark are tested and measured. Two limits to know about:
+> - The GitHub Action is included but has never run on GitHub, so expect to debug it if you use it.
 > - The judge is still imperfect on the free Gemini model: it sometimes rejects correct calculated numbers, and a few grades change between runs. So treat the sample's faithfulness drop as approximate; the citation drop is real.
 
 ```text
@@ -28,7 +28,7 @@ Most RAG projects are judged by trying a few questions by hand. That doesn't cat
 - **Faithfulness**: the answer is split into atomic claims, and each claim is checked against the retrieved contexts by an LLM judge (Claude). Score = supported claims / all claims.
 - **Citation accuracy**: for each claim, did the answer cite a source, and does that source actually say it? Reported as citation precision and citation recall.
 - **Regression detection**: a paired bootstrap over per-question deltas, so a run is flagged only when a drop is consistent rather than noise from one or two questions.
-- **CI**: a GitHub Action that keeps the latest `main` run as the baseline, compares every PR to it, posts a single sticky PR comment, and fails the check on a significant regression.
+- **CI (not yet run on GitHub)**: a GitHub Action designed to keep the latest `main` run as the baseline, compare every PR to it, post a single sticky PR comment, and fail the check on a significant regression.
 - **Dashboard**: a self-contained HTML report with run-over-run charts and a per-question drill-down showing the answer, each claim's verdict and the retrieved contexts.
 
 ## Quickstart
@@ -170,6 +170,8 @@ gate:
 
 ## In CI
 
+This Action has not been run on GitHub yet.
+
 ```yaml
 # .github/workflows/ragspec.yml
 on: { push: { branches: [main] }, pull_request: {} }
@@ -180,7 +182,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install -r requirements.txt
-      - uses: DecodeDebangi/ragspec@v0
+      - uses: DecodeDebangi/ragspec@main
         with:
           args: --sample 100
         env:

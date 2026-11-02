@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install your app
         run: pip install -r requirements.txt
-      - uses: DecodeDebangi/ragspec@v0
+      - uses: DecodeDebangi/ragspec@main
         with:
           config: ragspec.yaml
           args: --sample 100      # optional: a fixed, seeded subset keeps PR runs cheap
