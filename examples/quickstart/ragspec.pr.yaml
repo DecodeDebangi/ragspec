@@ -9,6 +9,7 @@ pipeline:
 k: [1, 4]
 concurrency: 8
 judge:
+  product: Nimbus
   model: claude-opus-5-5
   effort: medium
   concurrency: 8

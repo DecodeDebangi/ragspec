@@ -111,13 +111,19 @@ def generate_openai(model: str, system: str, user: str, base_url: str, api_key_e
     if not api_key:
         raise RuntimeError(f"set {api_key_env} to your API key, in .env or your shell")
     for attempt in range(6):
-        response = httpx.post(
-            f"{base_url.rstrip('/')}/chat/completions", timeout=300,
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={"model": model, "temperature": 0,
-                  "messages": [{"role": "system", "content": system},
-                               {"role": "user", "content": user}]},
-        )
+        try:
+            response = httpx.post(
+                f"{base_url.rstrip('/')}/chat/completions", timeout=300,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={"model": model, "temperature": 0,
+                      "messages": [{"role": "system", "content": system},
+                                   {"role": "user", "content": user}]},
+            )
+        except httpx.TransportError:
+            if attempt == 5:
+                raise
+            time.sleep(5.0 * 2**attempt)
+            continue
         # Free tiers rate-limit hard, so back off and retry.
         if response.status_code not in (429, 500, 502, 503, 504) or attempt == 5:
             break

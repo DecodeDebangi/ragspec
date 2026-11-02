@@ -10,6 +10,7 @@ pipeline:
 k: [1, 4]
 concurrency: 1       # one request at a time: a laptop runs one model call at once anyway
 judge:
+  product: Nimbus
   provider: ollama
   model: qwen2.5:7b
   concurrency: 1

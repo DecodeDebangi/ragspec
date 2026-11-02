@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from .config import JudgeConfig
 
 # Bump when the prompt or the post-processing in finalize() changes; it invalidates the cache.
-PROMPT_VERSION = "2026-11-01.3"
+PROMPT_VERSION = "2026-11-02.1"
 
 # USD per million tokens (input, output). Used only for the cost line in reports.
 PRICING = {
@@ -46,10 +46,10 @@ in the world. Use no outside knowledge: a claim that is correct but absent from 
 is unsupported.
 
 The contexts come from one knowledge base about one product or organization, and they may not \
-name it. Treat that name and a first-person voice ("we", "our") as given: a claim is never \
-unsupported just because it names the product or speaks for it, and being part of that product \
-is not a claim of its own ("the projects are Nimbus projects"). Every other fact still needs \
-backing.
+name it. If a <product> is given, every context is about it. Treat its name and a first-person \
+voice ("we", "our") as given: a claim is never unsupported just because it names the product or \
+speaks for it, and being part of the product is not a claim of its own. Every other fact still \
+needs backing.
 
 Work through the answer as follows.
 
@@ -129,12 +129,15 @@ def canonicalize_citations(
     return re.sub(pattern, rewrite, answer), cited
 
 
-def build_prompt(question: str, contexts: list[Context], answer: str, max_chars: int) -> str:
+def build_prompt(
+    question: str, contexts: list[Context], answer: str, max_chars: int, product: str | None = None
+) -> str:
     blocks = "\n".join(
         f'<context id="{c.id}">\n{c.text[:max_chars]}\n</context>' for c in contexts
     )
+    background = f"<product>{product}</product>\n\n" if product else ""
     return (
-        f"<question>\n{question}\n</question>\n\n"
+        f"{background}<question>\n{question}\n</question>\n\n"
         f"<contexts>\n{blocks or '(no contexts were retrieved)'}\n</contexts>\n\n"
         f"<answer>\n{answer}\n</answer>"
     )
@@ -148,8 +151,10 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float | 
 
 
 class ClaudeJudge:
-    def __init__(self, model: str, effort: str = "medium", max_context_chars: int = 6000):
+    def __init__(self, model: str, effort: str = "medium", max_context_chars: int = 6000,
+                 product: str | None = None):
         self.model = model
+        self.product = product
         self.effort = effort
         self.max_context_chars = max_context_chars
         self.client = anthropic.AsyncAnthropic(max_retries=6)
@@ -157,7 +162,7 @@ class ClaudeJudge:
     async def judge(
         self, question: str, contexts: list[Context], answer: str, cited_ids: list[str]
     ) -> JudgeResult:
-        prompt = build_prompt(question, contexts, answer, self.max_context_chars)
+        prompt = build_prompt(question, contexts, answer, self.max_context_chars, self.product)
         try:
             response = await self.client.beta.messages.create(
                 model=self.model,
@@ -198,8 +203,10 @@ class OllamaJudge:
     """The same judge prompt and schema, run on a local model served by Ollama."""
 
     def __init__(self, model: str, url: str = "http://localhost:11434",
-                 max_context_chars: int = 6000, timeout_s: float = 900.0):
+                 max_context_chars: int = 6000, timeout_s: float = 900.0,
+                 product: str | None = None):
         self.model = model
+        self.product = product
         self.url = url.rstrip("/")
         self.max_context_chars = max_context_chars
         self.client = httpx.AsyncClient(timeout=timeout_s)
@@ -207,7 +214,7 @@ class OllamaJudge:
     async def judge(
         self, question: str, contexts: list[Context], answer: str, cited_ids: list[str]
     ) -> JudgeResult:
-        prompt = build_prompt(question, contexts, answer, self.max_context_chars)
+        prompt = build_prompt(question, contexts, answer, self.max_context_chars, self.product)
         try:
             response = await self.client.post(f"{self.url}/api/chat", json={
                 "model": self.model,
@@ -252,8 +259,9 @@ class OpenAICompatibleJudge:
     ATTEMPTS = 6
 
     def __init__(self, model: str, base_url: str, api_key: str, max_context_chars: int = 6000,
-                 timeout_s: float = 300.0, backoff_s: float = 5.0):
+                 timeout_s: float = 300.0, backoff_s: float = 5.0, product: str | None = None):
         self.model = model
+        self.product = product
         self.url = f"{base_url.rstrip('/')}/chat/completions"
         self.max_context_chars = max_context_chars
         self.backoff_s = backoff_s
@@ -280,7 +288,14 @@ class OpenAICompatibleJudge:
 
     async def _post(self, prompt: str) -> httpx.Response:
         for attempt in range(self.ATTEMPTS):
-            response = await self.client.post(self.url, json=self._body(prompt))
+            try:
+                response = await self.client.post(self.url, json=self._body(prompt))
+            except httpx.TransportError:
+                # A brief network failure; the last attempt reports it through judge().
+                if attempt == self.ATTEMPTS - 1:
+                    raise
+                await asyncio.sleep(self.backoff_s * 2**attempt)
+                continue
             if response.status_code == 400 and self.use_schema:
                 self.use_schema = False
                 continue
@@ -299,7 +314,7 @@ class OpenAICompatibleJudge:
     async def judge(
         self, question: str, contexts: list[Context], answer: str, cited_ids: list[str]
     ) -> JudgeResult:
-        prompt = build_prompt(question, contexts, answer, self.max_context_chars)
+        prompt = build_prompt(question, contexts, answer, self.max_context_chars, self.product)
         try:
             response = await self._post(prompt)
         except httpx.HTTPError as e:
@@ -325,15 +340,16 @@ class OpenAICompatibleJudge:
 
 def make_judge(cfg: JudgeConfig) -> Judge:
     if cfg.provider == "ollama":
-        return OllamaJudge(cfg.model, cfg.ollama_url, cfg.max_context_chars)
+        return OllamaJudge(cfg.model, cfg.ollama_url, cfg.max_context_chars, product=cfg.product)
     if cfg.provider == "openai":
         if not cfg.base_url:
             raise ValueError("judge.base_url is required with provider: openai")
         api_key = os.environ.get(cfg.api_key_env)
         if not api_key:
             raise ValueError(f"set {cfg.api_key_env} to your API key, in .env or your shell")
-        return OpenAICompatibleJudge(cfg.model, cfg.base_url, api_key, cfg.max_context_chars)
-    return ClaudeJudge(cfg.model, cfg.effort, cfg.max_context_chars)
+        return OpenAICompatibleJudge(cfg.model, cfg.base_url, api_key, cfg.max_context_chars,
+                                     product=cfg.product)
+    return ClaudeJudge(cfg.model, cfg.effort, cfg.max_context_chars, cfg.product)
 
 
 _WORD = re.compile(r"[a-z0-9$%.]+")
@@ -427,6 +443,7 @@ class CachedJudge:
             {
                 "v": PROMPT_VERSION,
                 "model": self.model,
+                "product": getattr(self.inner, "product", None),
                 "q": question,
                 "ctx": [[c.id, c.text] for c in contexts],
                 "a": answer,

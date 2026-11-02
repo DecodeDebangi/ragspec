@@ -144,6 +144,7 @@ async def main() -> None:
     parser.add_argument("--provider", default="anthropic",
                         choices=["anthropic", "ollama", "openai"])
     parser.add_argument("--base-url")
+    parser.add_argument("--product", default="Nimbus")
     parser.add_argument("--model", default="claude-opus-5-5")
     parser.add_argument("--effort", default="medium")
     parser.add_argument("--set", dest="case_set", default="dev", choices=["dev", "holdout"])
@@ -153,7 +154,7 @@ async def main() -> None:
     cases = HOLDOUT if args.case_set == "holdout" else CASES
     load_env()
     judge = make_judge(JudgeConfig(provider=args.provider, model=args.model, effort=args.effort,
-                                   base_url=args.base_url))
+                                   base_url=args.base_url, product=args.product))
     # Local models serve one request at a time, and free hosted tiers rate-limit hard.
     sem = asyncio.Semaphore(10 if args.provider == "anthropic" else 1)
 

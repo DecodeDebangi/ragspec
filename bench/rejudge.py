@@ -29,12 +29,14 @@ async def main() -> None:
     parser.add_argument("--provider", default="anthropic",
                         choices=["anthropic", "ollama", "openai"])
     parser.add_argument("--base-url")
+    parser.add_argument("--product")
     parser.add_argument("--model", default="claude-opus-5-5")
     parser.add_argument("--cache-dir", type=Path, help="Default: a fresh cache each time")
     args = parser.parse_args()
     load_env()
     judge = CachedJudge(
-        make_judge(JudgeConfig(provider=args.provider, model=args.model, base_url=args.base_url)),
+        make_judge(JudgeConfig(provider=args.provider, model=args.model, base_url=args.base_url,
+                               product=args.product)),
         args.cache_dir or Path(tempfile.mkdtemp()),
     )
 

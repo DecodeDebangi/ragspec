@@ -57,6 +57,9 @@ class JudgeConfig(BaseModel):
     concurrency: int = 4
     cache_dir: str = ".ragspec/cache"
     max_context_chars: int = 6000
+    # The product the contexts describe, for documents that never name it. Without this, a judge
+    # can reject a correct claim only because it mentions the product.
+    product: str | None = None
 
 
 class CitationConfig(BaseModel):

@@ -226,3 +226,38 @@ def test_make_judge_requires_url_and_key(monkeypatch):
         make_judge(cfg)
     monkeypatch.setenv("LLM_API_KEY", "secret")
     assert isinstance(make_judge(cfg), OpenAICompatibleJudge)
+
+
+async def test_product_reaches_the_prompt_and_the_cache_key(tmp_path):
+    from ragspec.judge import build_prompt
+
+    assert build_prompt("q", [], "a", 100, "Nimbus").startswith("<product>Nimbus</product>")
+    assert "<product>" not in build_prompt("q", [], "a", 100)
+
+    inner = CountingJudge()
+    judge = CachedJudge(inner, tmp_path)
+    await judge.judge("q", [], "a", [])
+    inner.product = "Nimbus"
+    await judge.judge("q", [], "a", [])
+    assert inner.calls == 2
+
+
+async def test_hosted_judge_retries_network_failures_then_reports_them():
+    import httpx
+
+    calls = []
+
+    def flaky(request):
+        calls.append(request)
+        if len(calls) < 3:
+            raise httpx.ConnectError("no route")
+        return _hosted_reply(VERDICTS)
+
+    result = await _hosted_judge(flaky).judge("q", [Context(id="a", text="t")], "x [a]", ["a"])
+    assert len(calls) == 3 and result.error is None
+
+    def down(request):
+        raise httpx.ConnectError("no route")
+
+    result = await _hosted_judge(down).judge("q", [], "x", [])
+    assert "llm api error" in result.error

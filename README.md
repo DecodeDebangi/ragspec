@@ -4,8 +4,7 @@
 
 > **Current status.** The CLI, metrics, comparison, dashboard and retrieval benchmark are tested and measured. Three things are still in progress:
 > - The GitHub Action hasn't run on a real pull request yet, and the `v0` tag it references doesn't exist yet.
-> - The judge prompt was just revised and hasn't been re-measured.
-> - The sample Gemini results in `examples/quickstart` were graded by the earlier prompt. Their faithfulness drop is overstated by judge false alarms; the citation drop is real.
+> - The judge is still imperfect on the free Gemini model: it sometimes rejects correct calculated numbers, and a few grades change between runs. So treat the sample's faithfulness drop as approximate; the citation drop is real.
 
 ```text
 $ ragspec compare runs/scifact-hybrid.json runs/scifact-rerank-minilm.json
@@ -71,11 +70,12 @@ judge:
   base_url: https://generativelanguage.googleapis.com/v1beta/openai/
   model: gemini-3.5-flash-lite
   concurrency: 1
+  product: Nimbus      # optional: the product your documents describe, if they don't always name it
 ```
 
 The key is read from `LLM_API_KEY`, either in your shell or in a `.env` file in the working directory or any parent (set `api_key_env` to use another variable). Run `bench/judge_check.py --provider openai --base-url <url> --model <name>` to measure how well a model grades before trusting it.
 
-`gemini-3.5-flash-lite` scored 22/22 on that check in 15 seconds, but on real answers it also rejected correct facts, for example because the documents never name the product. Read a sample of its verdicts before trusting a faithfulness drop.
+`gemini-3.5-flash-lite` with `product` set matched 29/29 checks on the tuning cases and 22, 23 and 23 of 23 across three runs on 20 kept-out cases. Those cases were written by the same author, so also read a sample of verdicts on your own answers: when re-grading the sample answers, it sometimes rejected a correct calculated number, and grades on a few questions changed between runs.
 
 ### Try it in a browser
 
