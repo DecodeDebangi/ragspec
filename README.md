@@ -2,6 +2,8 @@
 
 **pytest for RAG.** Point it at any retrieval-augmented generation pipeline and a set of questions. It scores retrieval, checks every claim in every answer against the retrieved sources, and tells you, with confidence intervals, whether a change made things worse. It also includes a GitHub Action for pull requests, which hasn't been run on GitHub yet.
 
+![The ragspec playground: a question is asked live, both versions answer, and each answer is graded side by side](docs/demo.gif)
+
 > **Current status.** The CLI, metrics, comparison, dashboard and retrieval benchmark are tested and measured. Two limits to know about:
 > - The GitHub Action is included but has never run on GitHub, so expect to debug it if you use it.
 > - The judge is still imperfect on the free Gemini model: it sometimes rejects correct calculated numbers, and a few grades change between runs. So treat the sample's faithfulness drop as approximate; the citation drop is real.

@@ -232,7 +232,7 @@ details.more > summary:hover { color: var(--text); }
     <ol class="steps">
       <li><b>Did it find the right documents?</b><span>Compares the search results with the documents known to hold the answer.</span></li>
       <li><b>Does the answer stick to them?</b><span>An AI judge checks every fact against the documents and its citations.</span></li>
-      <li><b>Did the change make it worse?</b><span>Compares before and after, and fails the pull request if the drop is real.</span></li>
+      <li><b>Did the change make it worse?</b><span>Compares before and after, and fails the check if the drop is real.</span></li>
     </ol>
     <p class="demo-note" id="demo-note" hidden></p>
   </section>
@@ -584,7 +584,8 @@ async function run() {
   if (!question) return;
   const names = [$("configA").value];
   if ($("configB").value && $("configB").value !== names[0]) names.push($("configB").value);
-  const q = setup.questions.find((x) => x.id === $("preset").value && x.question === question);
+  // A question typed word for word matches its test question, so it also gets search scores.
+  const q = setup.questions.find((x) => x.question.toLowerCase() === question.toLowerCase());
   setBusy(names);
   try {
     const res = await fetch("/api/ask", {
